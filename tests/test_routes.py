@@ -1,5 +1,6 @@
 import asyncio
 from io import BytesIO
+from types import SimpleNamespace
 
 import pytest
 from starlette.datastructures import UploadFile
@@ -55,3 +56,32 @@ def test_generic_mode_still_requires_csv_upload() -> None:
 
     assert exc.value.status_code == 400
     assert exc.value.detail == "At least one CSV export file is required."
+
+
+def test_adobe_directory_import_endpoint_uses_parsed_rows(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_parser(filename: str, _raw: bytes):
+        captured["filename"] = filename
+        return SimpleNamespace(
+            rows=[{"email": "a@example.com", "first_name": "A", "last_name": "B", "branch": "Home Office"}],
+            source="xlsx",
+            warnings=[],
+        )
+
+    def fake_upsert(rows):
+        captured["upsert"] = rows
+
+    def fake_touch(rows):
+        captured["touch"] = rows
+
+    monkeypatch.setattr(main_module, "parse_adobe_directory_import_file", fake_parser)
+    monkeypatch.setattr(main_module, "upsert_adobe_users", fake_upsert)
+    monkeypatch.setattr(main_module, "touch_seen_users", fake_touch)
+
+    upload = UploadFile(filename="Adobe Cost Calc.xlsx", file=BytesIO(b"placeholder"))
+    result = asyncio.run(main_module.import_adobe_users(upload))
+
+    assert captured["filename"] == "Adobe Cost Calc.xlsx"
+    assert result["imported"] == 1
+    assert captured["upsert"] == captured["touch"]

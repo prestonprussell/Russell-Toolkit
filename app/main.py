@@ -50,6 +50,7 @@ from .processing import (
     parse_hexnode_invoice,
     summary_to_csv,
 )
+from .spreadsheet_import import parse_adobe_directory_import_file
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -125,6 +126,30 @@ def deactivate_adobe_users(payload: dict[str, Any] = Body(...)) -> dict[str, Any
     return {
         "requested": len(emails),
         "deactivated": count,
+    }
+
+
+@app.post("/api/adobe/users/import")
+async def import_adobe_users(mapping_file: UploadFile = File(...)) -> dict[str, Any]:
+    if not mapping_file.filename:
+        raise HTTPException(status_code=400, detail="Please choose a spreadsheet file to import.")
+
+    raw = await mapping_file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="The uploaded spreadsheet is empty.")
+
+    parsed = parse_adobe_directory_import_file(mapping_file.filename, raw)
+    if not parsed.rows:
+        raise HTTPException(status_code=400, detail=" | ".join(parsed.warnings) or "No importable users found.")
+
+    upsert_adobe_users(parsed.rows)
+    touch_seen_users(parsed.rows)
+
+    return {
+        "source": parsed.source,
+        "filename": mapping_file.filename,
+        "imported": len(parsed.rows),
+        "warnings": parsed.warnings,
     }
 
 

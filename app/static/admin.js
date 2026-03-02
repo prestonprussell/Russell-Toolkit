@@ -2,6 +2,8 @@ const vendorSelect = document.getElementById("admin-vendor");
 const searchInput = document.getElementById("admin-search");
 const reloadBtn = document.getElementById("admin-reload-btn");
 const syncEntraBtn = document.getElementById("admin-sync-entra-btn");
+const importBtn = document.getElementById("admin-import-btn");
+const importFileInput = document.getElementById("admin-import-file");
 const addBtn = document.getElementById("admin-add-btn");
 const saveBtn = document.getElementById("admin-save-btn");
 const statusText = document.getElementById("admin-status");
@@ -105,7 +107,9 @@ function renderRows() {
 
 function updateVendorActions() {
   const isIntegricom = vendorSelect.value === "integricom";
+  const isAdobe = vendorSelect.value === "adobe";
   syncEntraBtn.hidden = !isIntegricom;
+  importBtn.hidden = !isAdobe;
 }
 
 async function loadUsers() {
@@ -289,6 +293,44 @@ async function syncFromEntra() {
   }
 }
 
+async function importAdobeStartingList() {
+  if (vendorSelect.value !== "adobe") {
+    setStatus("Spreadsheet import is only available for Adobe directory.", "error");
+    return;
+  }
+
+  const file = importFileInput.files && importFileInput.files[0];
+  if (!file) {
+    setStatus("Choose an Adobe mapping file first.", "error");
+    return;
+  }
+
+  const payload = new FormData();
+  payload.append("mapping_file", file);
+
+  setStatus(`Importing ${file.name}...`);
+  importBtn.disabled = true;
+  try {
+    const response = await fetch("/api/adobe/users/import", {
+      method: "POST",
+      body: payload,
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.detail || "Import failed.");
+    }
+
+    const warningSuffix = result.warnings?.length ? ` Warnings: ${result.warnings.join(" | ")}` : "";
+    setStatus(`Imported ${result.imported} Adobe users from ${result.filename}.${warningSuffix}`, "ok");
+    importFileInput.value = "";
+    await loadUsers();
+  } catch (error) {
+    setStatus(error.message, "error");
+  } finally {
+    importBtn.disabled = false;
+  }
+}
+
 function initializeResizableTables() {
   const tables = document.querySelectorAll("table.resizable-table");
   tables.forEach((table) => {
@@ -335,6 +377,8 @@ vendorSelect.addEventListener("change", loadUsers);
 searchInput.addEventListener("input", renderRows);
 reloadBtn.addEventListener("click", loadUsers);
 syncEntraBtn.addEventListener("click", syncFromEntra);
+importBtn.addEventListener("click", () => importFileInput.click());
+importFileInput.addEventListener("change", importAdobeStartingList);
 addBtn.addEventListener("click", addUserRow);
 saveBtn.addEventListener("click", saveUsers);
 
