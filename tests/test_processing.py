@@ -1,4 +1,6 @@
 from decimal import Decimal
+from types import SimpleNamespace
+import sys
 
 from app.processing import (
     ADOBE_ADJUSTMENT_LICENSE,
@@ -15,6 +17,7 @@ from app.processing import (
     parse_adobe_csv,
     parse_adobe_export_csv,
     parse_integricom_export_csv,
+    parse_integricom_invoice,
     parse_csv,
     parse_hexnode_csv,
     summary_to_csv,
@@ -147,6 +150,36 @@ def test_summary_to_csv_includes_branch_totals_section() -> None:
     assert "Grand Total,,30.0" in csv_text
 
 
+def test_parse_integricom_invoice_applies_credit_to_effective_total(monkeypatch) -> None:
+    sample_text = """
+Date Invoice
+03/01/2026 26757
+Products & Other Charges Quantity Price Amount
+Sample Service 1.00 $25.00 $25.00
+Invoice Subtotal: $25.00
+Invoice Total: $25.00
+Payments: $0.00
+Credits: -$5.00
+Balance Due: $20.00
+"""
+
+    class FakePage:
+        def extract_text(self):
+            return sample_text
+
+    class FakePdfReader:
+        def __init__(self, _stream):
+            self.pages = [FakePage()]
+
+    monkeypatch.setitem(sys.modules, "pypdf", SimpleNamespace(PdfReader=FakePdfReader))
+
+    parsed = parse_integricom_invoice("invoice.pdf", b"%PDF")
+
+    assert parsed.invoice_total == Decimal("20.00")
+    assert parsed.credits_total == Decimal("-5.00")
+    assert any("applied invoice credits" in warning.lower() for warning in parsed.warnings)
+
+
 def test_build_adobe_user_allocations_returns_user_rows_and_unresolved() -> None:
     raw = (
         b"Email,First Name,Last Name,Admin Roles,User Groups,Team Products\n"
@@ -196,6 +229,20 @@ def test_parse_integricom_export_csv_uses_office_and_filters_unlicensed() -> Non
     by_email = {user.email: user for user in parsed.users}
     assert by_email["user1@example.com"].default_branch == "Acworth"
     assert by_email["user2@example.com"].default_branch == "Home Office"
+
+
+def test_parse_integricom_export_csv_construction_department_overrides_office() -> None:
+    raw = (
+        b"Display name,User principal name,First name,Last name,Department,Office,Licenses\n"
+        b"User One,user1@example.com,User,One,Construction,Doraville,Microsoft 365 Business Premium\n"
+        b"User Two,user2@example.com,User,Two,Construction Operations,Corporate,Exchange Online (Plan 1)\n"
+    )
+
+    parsed = parse_integricom_export_csv("m365.csv", raw)
+
+    assert len(parsed.users) == 2
+    assert parsed.users[0].default_branch == "Construction"
+    assert parsed.users[1].default_branch == "Construction"
 
 
 def test_build_integricom_user_allocations_applies_dynamic_and_home_office_remainder() -> None:
@@ -256,6 +303,38 @@ def test_build_integricom_user_allocations_applies_dynamic_and_home_office_remai
     }
     assert non_user_lookup[(INTEGRICOM_HOME_OFFICE, "Dropbox Business Standard", "Fixed Branch Item")] == 30.0
     assert non_user_lookup[(INTEGRICOM_HOME_OFFICE, "Workstation", "Invoice Delta")] == 25.0
+
+
+def test_build_integricom_user_allocations_prefers_construction_over_saved_branch() -> None:
+    raw = (
+        b"Display name,User principal name,First name,Last name,Department,Office,Licenses\n"
+        b"User One,user1@example.com,User,One,Construction,Doraville,Microsoft 365 Business Premium\n"
+    )
+    users = parse_integricom_export_csv("m365.csv", raw).users
+    invoice_lines = [
+        IntegricomInvoiceLine(
+            description="Workstation",
+            canonical_name="Workstation",
+            quantity=Decimal("1.00"),
+            unit_price=Decimal("25.00"),
+            amount=Decimal("25.00"),
+        ),
+    ]
+
+    rows, user_rows, _non_user_rows, _warnings, _unresolved, _prompts = build_integricom_user_allocations(
+        users,
+        {
+            "user1@example.com": {
+                "branch": "Doraville",
+                "first_name": "User",
+                "last_name": "One",
+            }
+        },
+        invoice_lines,
+    )
+
+    assert rows[0]["branch"] == "Construction"
+    assert user_rows[0]["branch"] == "Construction"
 
 
 def test_integricom_branch_tethered_extra_quantity_requires_assignment_prompt() -> None:

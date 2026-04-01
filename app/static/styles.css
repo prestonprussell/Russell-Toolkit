@@ -98,7 +98,7 @@ body {
 }
 
 .container {
-  max-width: 1700px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 24px;
   display: grid;
@@ -260,6 +260,11 @@ form {
   gap: 12px;
 }
 
+#upload-form > label {
+  width: fit-content;
+  justify-items: start;
+}
+
 label {
   display: grid;
   gap: 8px;
@@ -277,10 +282,16 @@ input[type="file"] {
 .dropzone {
   border: 1px dashed var(--line);
   border-radius: 12px;
-  padding: 10px;
+  padding: 14px 16px;
   background: var(--table-bg);
   transition: border-color 120ms ease, box-shadow 120ms ease;
   cursor: pointer;
+  width: min(340px, 100%);
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 .dropzone.drag-active {
@@ -295,6 +306,7 @@ input[type="file"] {
 
 .dropzone input[type="file"] {
   width: 100%;
+  max-width: 308px;
 }
 
 select {
@@ -366,6 +378,35 @@ button:hover {
   min-width: 220px;
 }
 
+.vendor-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vendor-picker-label {
+  font-weight: 600;
+}
+
+.vendor-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.vendor-type-btn {
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-ink);
+  border: 1px solid var(--line);
+}
+
+.vendor-type-btn.is-active {
+  background: var(--accent);
+  color: var(--button-ink);
+  border-color: transparent;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+}
+
 .admin-status {
   margin-bottom: 12px;
 }
@@ -425,14 +466,14 @@ button:hover {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--table-bg);
+  width: 100%;
 }
 
 table {
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
   border-collapse: collapse;
   margin-bottom: 12px;
-  table-layout: auto;
+  table-layout: fixed;
 }
 
 .resizable-table th {
@@ -474,7 +515,8 @@ td {
   text-align: left;
   padding: 10px 12px;
   border-bottom: 1px solid var(--line);
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
   vertical-align: top;
 }
 
@@ -485,7 +527,25 @@ td {
 #support-review-body td:nth-child(1),
 #support-review-body td:nth-child(6) {
   white-space: normal;
-  min-width: 260px;
+}
+
+#summary-body td:nth-child(3),
+#non-user-body td:nth-child(4),
+#branch-assignment-body td:nth-child(2),
+#branch-assignment-body td:nth-child(3),
+#support-review-body td:nth-child(2),
+#support-review-body td:nth-child(3),
+#support-review-body td:nth-child(5) {
+  white-space: nowrap;
+}
+
+#non-user-body input[type="text"],
+#adobe-users-body input[type="text"],
+#branch-assignment-body input[type="text"],
+#support-review-body input[type="text"] {
+  width: 100%;
+  min-width: 120px;
+  box-sizing: border-box;
 }
 
 .cell-error {

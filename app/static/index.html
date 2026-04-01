@@ -19,7 +19,7 @@
         } catch (_error) {}
       })();
     </script>
-    <link rel="stylesheet" href="/static/styles.css?v=2026-02-13-6" />
+    <link rel="stylesheet" href="/static/styles.css?v=2026-04-01-4" />
   </head>
   <body>
     <main class="container">
@@ -37,16 +37,17 @@
         <p>Upload invoice/reference files and one or more license export CSVs.</p>
 
         <form id="upload-form">
-          <label>
-            Vendor Type
-            <select id="vendor-type" name="vendor_type">
-              <option value="hexnode">Hexnode</option>
-              <option value="adobe">Adobe</option>
-              <option value="integricom">Integricom Licensing</option>
-              <option value="integricom_support">Integricom Support Hours</option>
-              <option value="generic">Generic (other CSV sources)</option>
-            </select>
-          </label>
+          <div class="vendor-picker" role="group" aria-label="Invoice type">
+            <span class="vendor-picker-label">Invoice Type</span>
+            <div class="vendor-button-row">
+              <button type="button" class="vendor-type-btn" data-vendor="hexnode">Hexnode</button>
+              <button type="button" class="vendor-type-btn" data-vendor="adobe">Adobe</button>
+              <button type="button" class="vendor-type-btn is-active" data-vendor="integricom">Integricom Licensing</button>
+              <button type="button" class="vendor-type-btn" data-vendor="integricom_support">Integricom Support Hours</button>
+              <button type="button" class="vendor-type-btn" data-vendor="generic">Generic</button>
+            </div>
+            <input type="hidden" id="vendor-type" name="vendor_type" value="integricom" />
+          </div>
 
           <label>
             Invoice (required for Hexnode, Adobe, Integricom Licensing, and Integricom Support Hours)
@@ -192,6 +193,6 @@
     </main>
 
     <script src="/static/theme.js?v=2026-02-13-1" defer></script>
-    <script src="/static/app.js?v=2026-02-13-3" defer></script>
+    <script src="/static/app.js?v=2026-04-01-8" defer></script>
   </body>
 </html>

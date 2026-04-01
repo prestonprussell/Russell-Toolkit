@@ -40,6 +40,7 @@ ADOBE_PRODUCT_ALIASES: dict[str, str] = {
 
 INTEGRICOM_HOME_OFFICE = "Home Office"
 INTEGRICOM_ADJUSTMENT_LICENSE = "Integricom Invoice Adjustment"
+INTEGRICOM_CREDIT_LICENSE = "Integricom Invoice Credit"
 INTEGRICOM_BRANCH_ALIASES: dict[str, str] = {
     "": INTEGRICOM_HOME_OFFICE,
     "Corporate": INTEGRICOM_HOME_OFFICE,
@@ -64,6 +65,7 @@ INTEGRICOM_MANAGED_INTERNET_BRANCHES: list[str] = [INTEGRICOM_HOME_OFFICE, *INTE
 INTEGRICOM_KNOWN_BRANCHES: list[str] = [
     INTEGRICOM_HOME_OFFICE,
     *INTEGRICOM_DISTRICT_BRANCHES,
+    "Construction",
     "Sugar Hill",
     "Grayson",
 ]
@@ -171,6 +173,7 @@ class IntegricomInvoiceParseResult:
     filename: str
     invoice_number: str | None
     invoice_total: Decimal | None
+    credits_total: Decimal
     line_items: list[IntegricomInvoiceLine]
     warnings: list[str]
 
@@ -816,7 +819,11 @@ def build_adobe_user_allocations(
     return line_rows, user_rows, warnings, unresolved_emails
 
 
-def _normalize_integricom_branch(office: str | None) -> str:
+def _normalize_integricom_branch(office: str | None, department: str | None = None) -> str:
+    department_raw = (department or "").strip()
+    if "construction" in department_raw.lower():
+        return "Construction"
+
     raw = (office or "").strip()
     return INTEGRICOM_BRANCH_ALIASES.get(raw, raw or INTEGRICOM_HOME_OFFICE)
 
@@ -923,6 +930,7 @@ def parse_integricom_invoice(filename: str, raw: bytes) -> IntegricomInvoicePars
             filename=filename,
             invoice_number=None,
             invoice_total=None,
+            credits_total=Decimal("0.00"),
             line_items=[],
             warnings=["Invoice parser unavailable (pypdf not installed)."],
         )
@@ -935,6 +943,7 @@ def parse_integricom_invoice(filename: str, raw: bytes) -> IntegricomInvoicePars
             filename=filename,
             invoice_number=None,
             invoice_total=None,
+            credits_total=Decimal("0.00"),
             line_items=[],
             warnings=[f"Could not parse PDF text from {filename}: {exc}"],
         )
@@ -947,10 +956,23 @@ def parse_integricom_invoice(filename: str, raw: bytes) -> IntegricomInvoicePars
         text,
         patterns=[
             r"Invoice Total:\s*\$?\s*([0-9][0-9,]*\.\d{2})",
-            r"Balance Due:\s*\$?\s*([0-9][0-9,]*\.\d{2})",
             r"Invoice Subtotal:\s*\$?\s*([0-9][0-9,]*\.\d{2})",
+            r"Balance Due:\s*\$?\s*([0-9][0-9,]*\.\d{2})",
         ],
     )
+    credits_total = _money_from_text(
+        text,
+        patterns=[
+            r"Credits:\s*(-?\$?\s*[0-9][0-9,]*\.\d{2})",
+            r"Credits:\s*\(?\$?\s*([0-9][0-9,]*\.\d{2})\)?",
+        ],
+    )
+    credits_total = credits_total or Decimal("0.00")
+    if invoice_total is not None and credits_total is not None and credits_total != Decimal("0.00"):
+        invoice_total = (invoice_total + credits_total).quantize(Decimal("0.01"))
+        warnings.append(
+            f"{filename}: applied invoice credits of {credits_total} to the Home Office adjustment."
+        )
     if invoice_total is None:
         warnings.append(f"{filename}: could not extract Integricom invoice total.")
 
@@ -1018,6 +1040,7 @@ def parse_integricom_invoice(filename: str, raw: bytes) -> IntegricomInvoicePars
         filename=filename,
         invoice_number=invoice_number,
         invoice_total=invoice_total,
+        credits_total=credits_total,
         line_items=line_items,
         warnings=warnings,
     )
@@ -1244,6 +1267,7 @@ def parse_integricom_export_csv(filename: str, raw: bytes) -> IntegricomExportPa
     first_name_col = _match_header(headers, ["first_name", "first", "given_name"])
     last_name_col = _match_header(headers, ["last_name", "last", "surname", "family_name"])
     office_col = _match_header(headers, ["office", "branch", "location", "site"])
+    department_col = _match_header(headers, ["department", "dept", "division"])
     licenses_col = _match_header(headers, ["licenses", "license", "products"])
 
     if email_col is None or licenses_col is None:
@@ -1278,6 +1302,7 @@ def parse_integricom_export_csv(filename: str, raw: bytes) -> IntegricomExportPa
             continue
 
         office = (row.get(office_col) or "").strip() if office_col else ""
+        department = (row.get(department_col) or "").strip() if department_col else ""
         users.append(
             IntegricomExportUser(
                 source_file=filename,
@@ -1285,7 +1310,7 @@ def parse_integricom_export_csv(filename: str, raw: bytes) -> IntegricomExportPa
                 first_name=(row.get(first_name_col) or "").strip() if first_name_col else "",
                 last_name=(row.get(last_name_col) or "").strip() if last_name_col else "",
                 office=office,
-                default_branch=_normalize_integricom_branch(office),
+                default_branch=_normalize_integricom_branch(office, department),
                 licenses=tokens,
             )
         )
@@ -1535,7 +1560,10 @@ def build_integricom_user_allocations(
         if not email:
             continue
         profile = user_directory.get(email)
-        branch = ((profile.get("branch") if profile else "") or user.default_branch).strip()
+        directory_branch = (profile.get("branch") if profile else "") or ""
+        branch = (directory_branch or user.default_branch).strip()
+        if user.default_branch == "Construction":
+            branch = "Construction"
         first_name = (user.first_name or "").strip()
         last_name = (user.last_name or "").strip()
         if profile:

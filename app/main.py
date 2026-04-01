@@ -33,6 +33,7 @@ from .processing import (
     HEXNODE_DEFAULT_LICENSE,
     IntegricomExportUser,
     INTEGRICOM_ADJUSTMENT_LICENSE,
+    INTEGRICOM_CREDIT_LICENSE,
     INTEGRICOM_HOME_OFFICE,
     INTEGRICOM_KNOWN_BRANCHES,
     apply_home_office_adjustment,
@@ -64,6 +65,58 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+def _append_integricom_reconciliation_row(
+    non_user_rows: list[dict[str, Any]],
+    *,
+    adjustment: Decimal,
+) -> list[dict[str, Any]]:
+    if adjustment == Decimal("0.00"):
+        return non_user_rows
+
+    updated_rows = [dict(row) for row in non_user_rows]
+    updated_rows.append(
+        {
+            "branch": INTEGRICOM_HOME_OFFICE,
+            "license": INTEGRICOM_ADJUSTMENT_LICENSE,
+            "allocation_type": "Invoice Reconciliation",
+            "total_amount": float(adjustment.quantize(Decimal("0.01"))),
+        }
+    )
+    updated_rows.sort(key=lambda row: (row.get("branch", ""), row.get("license", ""), row.get("allocation_type", "")))
+    return updated_rows
+
+
+def _append_integricom_credit_row(
+    line_rows: list[dict[str, Any]],
+    non_user_rows: list[dict[str, Any]],
+    *,
+    credits_total: Decimal,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if credits_total == Decimal("0.00"):
+        return line_rows, non_user_rows
+
+    credit_row = {
+        "source_file": "invoice",
+        "branch": INTEGRICOM_HOME_OFFICE,
+        "license": INTEGRICOM_CREDIT_LICENSE,
+        "amount": credits_total,
+    }
+    updated_line_rows = [*line_rows, credit_row]
+    updated_non_user_rows = [
+        *non_user_rows,
+        {
+            "branch": INTEGRICOM_HOME_OFFICE,
+            "license": INTEGRICOM_CREDIT_LICENSE,
+            "allocation_type": "Invoice Credit",
+            "total_amount": float(credits_total.quantize(Decimal("0.01"))),
+        },
+    ]
+    updated_non_user_rows.sort(
+        key=lambda row: (row.get("branch", ""), row.get("license", ""), row.get("allocation_type", ""))
+    )
+    return updated_line_rows, updated_non_user_rows
 
 
 @app.get("/")
@@ -527,6 +580,7 @@ async def _analyze_adobe(
             "invoice_total": float(parsed_invoice.invoice_total),
             "home_office_adjustment": float(adjustment),
         }
+        non_user_rows = _append_integricom_reconciliation_row(non_user_rows, adjustment=adjustment)
 
     breakdown_csv = summary_to_csv(summary)
     grand_total = round(sum(item["total_amount"] for item in summary), 2)
@@ -701,6 +755,11 @@ async def _analyze_integricom(
         directory_profiles,
         parsed_invoice.line_items,
         branch_item_updates=submitted_branch_item_updates,
+    )
+    all_rows, non_user_rows = _append_integricom_credit_row(
+        all_rows,
+        non_user_rows,
+        credits_total=parsed_invoice.credits_total,
     )
     warnings.extend(allocation_warnings)
 

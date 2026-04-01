@@ -1,4 +1,5 @@
 from app.entra_graph import _canonical_integricom_license_from_sku_part
+from app.processing import _normalize_integricom_branch
 from app.processing import (
     INTEGRICOM_LICENSE_BP,
     INTEGRICOM_LICENSE_F3,
@@ -19,3 +20,9 @@ def test_canonical_integricom_license_from_sku_part_mappings() -> None:
 def test_canonical_integricom_license_from_sku_part_unknown_returns_none() -> None:
     assert _canonical_integricom_license_from_sku_part("UNKNOWN_SKU_PART") is None
     assert _canonical_integricom_license_from_sku_part("") is None
+
+
+def test_normalize_integricom_branch_uses_construction_department_override() -> None:
+    assert _normalize_integricom_branch("Doraville", "Construction") == "Construction"
+    assert _normalize_integricom_branch("Corporate", "Construction Operations") == "Construction"
+    assert _normalize_integricom_branch("Doraville", "Operations") == "Doraville"

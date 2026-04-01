@@ -1,5 +1,6 @@
 const form = document.getElementById("upload-form");
 const vendorTypeSelect = document.getElementById("vendor-type");
+const vendorTypeButtons = [...document.querySelectorAll(".vendor-type-btn")];
 const invoiceInput = document.getElementById("invoice-file");
 const csvInput = document.getElementById("csv-files");
 const invoiceDropzone = document.getElementById("invoice-dropzone");
@@ -33,6 +34,8 @@ let currentUserRows = [];
 let currentUserVendor = "";
 let currentBranchAssignmentPrompts = [];
 let currentSupportRows = [];
+let currentNonUserRows = [];
+let currentSummaryRows = [];
 
 function formatMoney(value) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value || 0);
@@ -64,9 +67,36 @@ function refreshAnalyzeButtonLabel() {
   analyzeBtn.textContent = "Analyze and Build Breakdown";
 }
 
+function setVendorType(nextVendor) {
+  vendorTypeSelect.value = nextVendor;
+  vendorTypeButtons.forEach((button) => {
+    const isActive = button.dataset.vendor === nextVendor;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+
+  currentUserRows = [];
+  currentUserVendor = "";
+  currentBranchAssignmentPrompts = [];
+  currentSupportRows = [];
+  refreshAnalyzeButtonLabel();
+}
+
 function initializeResizableTables() {
   const tables = document.querySelectorAll("table.resizable-table");
   tables.forEach((table) => {
+    if (!table.querySelector("colgroup")) {
+      const headerCells = [...table.querySelectorAll("thead th")];
+      if (headerCells.length) {
+        const colgroup = document.createElement("colgroup");
+        headerCells.forEach(() => {
+          const col = document.createElement("col");
+          colgroup.appendChild(col);
+        });
+        table.insertBefore(colgroup, table.firstChild);
+      }
+    }
+
     table.querySelectorAll("thead th").forEach((headerCell) => {
       if (headerCell.dataset.resizable === "true") {
         return;
@@ -78,11 +108,24 @@ function initializeResizableTables() {
 
       let startX = 0;
       let startWidth = 0;
+      const columnIndex = [...headerCell.parentElement.children].indexOf(headerCell);
+      const column = table.querySelectorAll("colgroup col")[columnIndex];
+
+      const setColumnWidth = (widthPx) => {
+        if (!column) return;
+        if (!widthPx) {
+          column.style.width = "";
+          headerCell.style.width = "";
+          return;
+        }
+        const clampedWidth = Math.max(90, Math.min(700, widthPx));
+        column.style.width = `${clampedWidth}px`;
+        headerCell.style.width = `${clampedWidth}px`;
+      };
 
       const handlePointerMove = (event) => {
         const delta = event.clientX - startX;
-        const nextWidth = Math.max(100, startWidth + delta);
-        headerCell.style.width = `${nextWidth}px`;
+        setColumnWidth(startWidth + delta);
       };
 
       const handlePointerUp = () => {
@@ -95,13 +138,62 @@ function initializeResizableTables() {
         event.preventDefault();
         startX = event.clientX;
         startWidth = headerCell.getBoundingClientRect().width;
-        headerCell.style.width = `${startWidth}px`;
+        setColumnWidth(startWidth);
         document.body.classList.add("col-resize-active");
         window.addEventListener("pointermove", handlePointerMove);
         window.addEventListener("pointerup", handlePointerUp);
       });
 
+      resizer.addEventListener("dblclick", (event) => {
+        event.preventDefault();
+        setColumnWidth(null);
+      });
+
       headerCell.appendChild(resizer);
+    });
+  });
+}
+
+function autoFitResizableTables() {
+  const tables = document.querySelectorAll("table.resizable-table");
+  tables.forEach((table) => {
+    const wrap = table.closest(".table-wrap");
+    const headerCells = [...table.querySelectorAll("thead th")];
+    const columns = [...table.querySelectorAll("colgroup col")];
+    if (!headerCells.length || columns.length !== headerCells.length || !wrap) {
+      return;
+    }
+
+    const measuredWidths = [];
+    headerCells.forEach((headerCell, index) => {
+      const relatedCells = [
+        headerCell,
+        ...table.querySelectorAll(`tbody tr td:nth-child(${index + 1})`),
+      ];
+
+      let maxWidth = 90;
+      relatedCells.forEach((cell) => {
+        maxWidth = Math.max(maxWidth, Math.ceil(cell.scrollWidth + 24));
+      });
+      measuredWidths.push(Math.max(90, Math.min(700, maxWidth)));
+    });
+
+    const availableWidth = Math.max(wrap.clientWidth - 4, 320);
+    const totalMeasuredWidth = measuredWidths.reduce((sum, value) => sum + value, 0);
+    const scale = totalMeasuredWidth > availableWidth ? availableWidth / totalMeasuredWidth : 1;
+
+    measuredWidths.forEach((width, index) => {
+      const fittedWidth = Math.max(72, Math.floor(width * scale));
+      columns[index].style.width = `${fittedWidth}px`;
+      headerCells[index].style.width = `${fittedWidth}px`;
+    });
+  });
+}
+
+function scheduleAutoFitTables() {
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      autoFitResizableTables();
     });
   });
 }
@@ -202,6 +294,8 @@ function clearResults() {
   saveBranchesBtn.textContent = "Save Branch Changes";
   currentBranchAssignmentPrompts = [];
   currentSupportRows = [];
+  currentNonUserRows = [];
+  currentSummaryRows = [];
 }
 
 function addCard(label, value) {
@@ -247,6 +341,7 @@ function renderMissingUsers(missingUsers) {
 
 function renderSummaryTable(summary) {
   summaryBody.innerHTML = "";
+  currentSummaryRows = summary || [];
   summary.forEach((row) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -279,10 +374,11 @@ function renderUserTable(rows) {
 
 function renderNonUserTable(rows) {
   nonUserBody.innerHTML = "";
-  (rows || []).forEach((row) => {
+  currentNonUserRows = rows || [];
+  currentNonUserRows.forEach((row, idx) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${row.branch || ""}</td>
+      <td><input type="text" id="non-user-branch-${idx}" value="${row.branch || ""}" placeholder="Branch" /></td>
       <td>${row.license || ""}</td>
       <td>${row.allocation_type || ""}</td>
       <td>${formatMoney(row.total_amount || 0)}</td>
@@ -394,6 +490,95 @@ function collectSupportUpdates() {
     row_key: row.row_key,
     branch: (document.getElementById(`support-branch-${idx}`)?.value || row.branch || "").trim(),
   }));
+}
+
+function collectNonUserUpdates() {
+  return currentNonUserRows.map((row, idx) => ({
+    ...row,
+    branch: (document.getElementById(`non-user-branch-${idx}`)?.value || row.branch || "").trim(),
+  }));
+}
+
+function buildSummaryCsv(summaryRows) {
+  const branchTotals = new Map();
+  (summaryRows || []).forEach((row) => {
+    branchTotals.set(row.branch, (branchTotals.get(row.branch) || 0) + Number(row.total_amount || 0));
+  });
+
+  const lines = [["Branch", "Total"]];
+  [...branchTotals.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .forEach(([branch, total]) => {
+      lines.push([branch, Number(total.toFixed(2))]);
+    });
+
+  const grandTotal = [...branchTotals.values()].reduce((sum, value) => sum + value, 0);
+  lines.push(["Grand Total", "", Number(grandTotal.toFixed(2))]);
+  lines.push([]);
+  lines.push(["Branch", "License", "TotalAmount", "BranchTotal"]);
+
+  (summaryRows || []).forEach((row) => {
+    lines.push([
+      row.branch,
+      row.license,
+      Number(Number(row.total_amount || 0).toFixed(2)),
+      Number((branchTotals.get(row.branch) || 0).toFixed(2)),
+    ]);
+  });
+
+  return lines
+    .map((line) =>
+      line
+        .map((value) => {
+          const text = `${value ?? ""}`;
+          return /[",\n]/.test(text) ? `"${text.replace(/"/g, "\"\"")}"` : text;
+        })
+        .join(","),
+    )
+    .join("\n");
+}
+
+function applyNonUserEditsToSummary(updatedNonUserRows) {
+  const grouped = new Map();
+  currentSummaryRows.forEach((row) => {
+    const key = `${row.branch}|||${row.license}`;
+    grouped.set(key, Number(row.total_amount || 0));
+  });
+
+  currentNonUserRows.forEach((row, idx) => {
+    const updated = updatedNonUserRows[idx];
+    const oldBranch = row.branch || "";
+    const newBranch = updated.branch || "";
+    const license = row.license || "";
+    const amount = Number(row.total_amount || 0);
+    if (!newBranch || oldBranch === newBranch) {
+      return;
+    }
+
+    const oldKey = `${oldBranch}|||${license}`;
+    const newKey = `${newBranch}|||${license}`;
+    grouped.set(oldKey, Number(((grouped.get(oldKey) || 0) - amount).toFixed(2)));
+    grouped.set(newKey, Number(((grouped.get(newKey) || 0) + amount).toFixed(2)));
+  });
+
+  const nextSummary = [...grouped.entries()]
+    .filter(([, total]) => Math.abs(total) >= 0.005)
+    .map(([key, total]) => {
+      const [branch, license] = key.split("|||");
+      return {
+        branch,
+        license,
+        total_amount: Number(total.toFixed(2)),
+      };
+    })
+    .sort((a, b) => {
+      const branchCompare = a.branch.localeCompare(b.branch);
+      return branchCompare || a.license.localeCompare(b.license);
+    });
+
+  currentSummaryRows = nextSummary;
+  latestCsvText = buildSummaryCsv(nextSummary);
+  renderSummaryTable(nextSummary);
 }
 
 function setUsersSectionCopy(vendorType) {
@@ -562,13 +747,16 @@ form.addEventListener("submit", async (event) => {
         renderBranchAssignmentPrompts(branchPrompts);
         nonUserSection.hidden = false;
         branchAssignmentSection.hidden = !branchPrompts.length;
+        renderSummaryTable(data.summary || []);
+        summarySection.hidden = false;
       } else {
         renderNonUserTable([]);
         renderBranchAssignmentPrompts([]);
         nonUserSection.hidden = true;
         branchAssignmentSection.hidden = true;
+        renderSummaryTable(data.summary || []);
+        summarySection.hidden = false;
       }
-      summarySection.hidden = true;
 
       if (data.needs_user_enrichment) {
         const li = document.createElement("li");
@@ -602,6 +790,7 @@ form.addEventListener("submit", async (event) => {
     }
 
     resultPanel.hidden = false;
+    scheduleAutoFitTables();
   } catch (error) {
     alert(error.message);
   } finally {
@@ -612,7 +801,26 @@ form.addEventListener("submit", async (event) => {
 
 saveBranchesBtn.addEventListener("click", async () => {
   if (!currentUserRows.length || !currentUserVendor) {
-    alert("No users loaded yet. Run an Adobe or Integricom analysis first.");
+    if (!currentNonUserRows.length) {
+      alert("No editable rows loaded yet. Run an Adobe or Integricom analysis first.");
+      return;
+    }
+  }
+
+  const nonUserUpdates = collectNonUserUpdates();
+  const hasNonUserBranchChanges = currentNonUserRows.some(
+    (row, idx) => (row.branch || "") !== (nonUserUpdates[idx].branch || ""),
+  );
+
+  if (!currentUserRows.length || !currentUserVendor) {
+    if (hasNonUserBranchChanges) {
+      applyNonUserEditsToSummary(nonUserUpdates);
+      currentNonUserRows = nonUserUpdates;
+      renderNonUserTable(currentNonUserRows);
+      const li = document.createElement("li");
+      li.textContent = "Applied branch updates to non-user charges and refreshed totals/export.";
+      warningsList.prepend(li);
+    }
     return;
   }
 
@@ -644,9 +852,18 @@ saveBranchesBtn.addEventListener("click", async () => {
     }));
     renderUserTable(currentUserRows);
 
+    if (hasNonUserBranchChanges) {
+      applyNonUserEditsToSummary(nonUserUpdates);
+      currentNonUserRows = nonUserUpdates;
+      renderNonUserTable(currentNonUserRows);
+    }
+
     const li = document.createElement("li");
-    li.textContent = `Saved branch updates for ${result.saved} users.`;
+    li.textContent = hasNonUserBranchChanges
+      ? `Saved branch updates for ${result.saved} users and refreshed non-user charge totals.`
+      : `Saved branch updates for ${result.saved} users.`;
     warningsList.prepend(li);
+    scheduleAutoFitTables();
   } catch (error) {
     alert(error.message);
   } finally {
@@ -672,15 +889,14 @@ downloadBtn.addEventListener("click", () => {
   URL.revokeObjectURL(url);
 });
 
-vendorTypeSelect.addEventListener("change", () => {
-  currentUserRows = [];
-  currentUserVendor = "";
-  currentBranchAssignmentPrompts = [];
-  currentSupportRows = [];
-  refreshAnalyzeButtonLabel();
+vendorTypeButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    setVendorType(button.dataset.vendor || "integricom");
+  });
 });
 
 initializeResizableTables();
 initializeDropzone(invoiceDropzone, invoiceInput, "Drag and drop invoice file here, or click to browse");
 initializeDropzone(csvDropzone, csvInput, "Drag and drop one or more CSV files here, or click to browse");
+setVendorType(vendorTypeSelect.value || "integricom");
 refreshAnalyzeButtonLabel();

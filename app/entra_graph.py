@@ -9,13 +9,12 @@ from dataclasses import dataclass
 from typing import Any
 
 from .processing import (
-    INTEGRICOM_BRANCH_ALIASES,
-    INTEGRICOM_HOME_OFFICE,
     INTEGRICOM_LICENSE_BP,
     INTEGRICOM_LICENSE_F3,
     INTEGRICOM_LICENSE_P1,
     INTEGRICOM_LICENSE_P2,
     INTEGRICOM_LICENSE_TEAMS_ESSENTIALS,
+    _normalize_integricom_branch,
 )
 
 
@@ -64,11 +63,6 @@ class EntraIntegricomExportUser:
     office: str
     default_branch: str
     licenses: list[str]
-
-
-def _normalize_integricom_branch_from_office(office: str | None) -> str:
-    raw = (office or "").strip()
-    return INTEGRICOM_BRANCH_ALIASES.get(raw, raw or INTEGRICOM_HOME_OFFICE)
 
 
 def _canonical_integricom_license_from_sku_part(sku_part: str | None) -> str | None:
@@ -170,7 +164,7 @@ def sync_integricom_users_from_entra() -> EntraIntegricomSyncResult:
     sku_id_to_part = _get_subscribed_sku_map(access_token)
     users_url = (
         f"{GRAPH_BASE_URL}/users"
-        "?$select=givenName,surname,userPrincipalName,mail,officeLocation,assignedLicenses"
+        "?$select=givenName,surname,userPrincipalName,mail,officeLocation,department,assignedLicenses"
         "&$top=999"
     )
     graph_users = _graph_get_paginated(users_url, access_token)
@@ -219,7 +213,8 @@ def sync_integricom_users_from_entra() -> EntraIntegricomSyncResult:
 
         supported_users += 1
         office = str(user.get("officeLocation") or "").strip()
-        branch = _normalize_integricom_branch_from_office(office)
+        department = str(user.get("department") or "").strip()
+        branch = _normalize_integricom_branch(office, department)
         rows_to_upsert.append(
             {
                 "email": email,

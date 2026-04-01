@@ -85,3 +85,54 @@ def test_adobe_directory_import_endpoint_uses_parsed_rows(monkeypatch) -> None:
     assert captured["filename"] == "Adobe Cost Calc.xlsx"
     assert result["imported"] == 1
     assert captured["upsert"] == captured["touch"]
+
+
+def test_append_integricom_reconciliation_row_adds_home_office_preview_row() -> None:
+    rows = [
+        {
+            "branch": "Doraville",
+            "license": "NetWatch360 Managed Firewall",
+            "allocation_type": "Fixed Branch Item",
+            "total_amount": 185.22,
+        }
+    ]
+
+    updated = main_module._append_integricom_reconciliation_row(
+        rows,
+        adjustment=main_module.Decimal("-54.00"),
+    )
+
+    assert any(
+        row["branch"] == "Home Office"
+        and row["license"] == "Integricom Invoice Adjustment"
+        and row["allocation_type"] == "Invoice Reconciliation"
+        and row["total_amount"] == -54.0
+        for row in updated
+    )
+
+
+def test_append_integricom_credit_row_adds_home_office_credit_preview_row() -> None:
+    line_rows = [
+        {"source_file": "invoice", "branch": "Doraville", "license": "Workstation", "amount": main_module.Decimal("25.00")}
+    ]
+    non_user_rows = []
+
+    updated_line_rows, updated_non_user_rows = main_module._append_integricom_credit_row(
+        line_rows,
+        non_user_rows,
+        credits_total=main_module.Decimal("-54.00"),
+    )
+
+    assert any(
+        row["branch"] == "Home Office"
+        and row["license"] == "Integricom Invoice Credit"
+        and row["allocation_type"] == "Invoice Credit"
+        and row["total_amount"] == -54.0
+        for row in updated_non_user_rows
+    )
+    assert any(
+        row["branch"] == "Home Office"
+        and row["license"] == "Integricom Invoice Credit"
+        and row["amount"] == main_module.Decimal("-54.00")
+        for row in updated_line_rows
+    )
