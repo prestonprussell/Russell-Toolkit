@@ -26,8 +26,9 @@ def _utc_now() -> str:
 
 def _connect() -> sqlite3.Connection:
     ADOBE_DIRECTORY_DB.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(ADOBE_DIRECTORY_DB)
+    conn = sqlite3.connect(ADOBE_DIRECTORY_DB, timeout=30)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
     return conn
 
 
