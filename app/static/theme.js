@@ -1,4 +1,4 @@
-const THEME_KEY = "codexplayground-theme";
+const THEME_KEY = "russell-toolkit-theme";
 const THEME_DARK = "dark";
 const THEME_LIGHT = "light";
 

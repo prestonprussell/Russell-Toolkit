@@ -1,9 +1,9 @@
 services:
-  ap-allocation-app:
+  russell-toolkit:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ap-allocation-app
+    container_name: russell-toolkit
     environment:
       ENTRA_TENANT_ID: ${ENTRA_TENANT_ID:-}
       ENTRA_CLIENT_ID: ${ENTRA_CLIENT_ID:-}

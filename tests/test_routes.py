@@ -21,7 +21,7 @@ def test_launcher_and_invoice_routes_registered() -> None:
 def test_launcher_html_lists_invoice_analyzer() -> None:
     html = (STATIC_DIR / "launcher.html").read_text(encoding="utf-8")
 
-    assert "CodexPlayground" in html
+    assert "Russell Toolkit" in html
     assert "Invoice Analyzer" in html
     assert "Admin" in html
 

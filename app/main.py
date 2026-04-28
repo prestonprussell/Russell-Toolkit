@@ -56,7 +56,7 @@ from .spreadsheet_import import parse_adobe_directory_import_file
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 
-app = FastAPI(title="AP Allocation App", version="0.3.0")
+app = FastAPI(title="Russell Toolkit", version="0.3.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

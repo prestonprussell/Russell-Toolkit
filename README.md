@@ -1,6 +1,8 @@
-# AP Allocation App (MVP)
+# Russell Toolkit
 
-Cross-platform web app that helps Accounts Payable break software license charges down by **Branch + License**.
+Internal tools for Russell — a small, modular FastAPI app that hosts utilities like the Invoice Analyzer and Directory Admin, with room to grow into document processing and other ops tools.
+
+The first tool, **Invoice Analyzer**, helps Accounts Payable break software license charges down by **Branch + License**.
 
 Built as a lightweight FastAPI app so it runs on:
 - macOS
@@ -52,7 +54,7 @@ Integricom Support Hours mode includes:
 Run from this folder:
 
 ```bash
-cd /Users/prestonpierce/Documents/TestCodexProj/ap-allocation-app
+cd /Users/prestonpierce/Documents/TestCodexProj/russell-toolkit
 docker compose up --build -d
 ```
 
@@ -75,7 +77,7 @@ Data persistence:
 ## Run locally
 
 ```bash
-cd /Users/prestonpierce/Documents/TestCodexProj/ap-allocation-app
+cd /Users/prestonpierce/Documents/TestCodexProj/russell-toolkit
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -90,7 +92,7 @@ Open:
 ## Windows quick start (PowerShell)
 
 ```powershell
-cd C:\path\to\ap-allocation-app
+cd C:\path\to\russell-toolkit
 py -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
@@ -145,13 +147,13 @@ Fallback supported:
 
 ## Sample files
 
-- `/Users/prestonpierce/Documents/TestCodexProj/ap-allocation-app/samples/microsoft-export.csv`
-- `/Users/prestonpierce/Documents/TestCodexProj/ap-allocation-app/samples/adobe-export.csv`
+- `/Users/prestonpierce/Documents/TestCodexProj/russell-toolkit/samples/microsoft-export.csv`
+- `/Users/prestonpierce/Documents/TestCodexProj/russell-toolkit/samples/adobe-export.csv`
 
 ## Tests
 
 ```bash
-cd /Users/prestonpierce/Documents/TestCodexProj/ap-allocation-app
+cd /Users/prestonpierce/Documents/TestCodexProj/russell-toolkit
 source .venv/bin/activate
 pip install -r requirements-dev.txt
 pytest -q
