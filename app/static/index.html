@@ -34,7 +34,7 @@
           <span class="chip">Invoice Analyzer</span>
         </div>
         <h1>AP License Allocation</h1>
-        <p>Upload invoice/reference files and one or more license export CSVs.</p>
+        <p>Select an invoice type — the required uploads will appear below.</p>
 
         <form id="upload-form">
           <div class="vendor-picker" role="group" aria-label="Invoice type">
@@ -49,21 +49,25 @@
             <input type="hidden" id="vendor-type" name="vendor_type" value="integricom" />
           </div>
 
-          <label>
-            Invoice (required for Hexnode, Adobe, Integricom Licensing, and Integricom Support Hours)
-            <div class="dropzone" id="invoice-dropzone" data-input-id="invoice-file">
-              <p class="dropzone-text">Drag and drop invoice file here, or click to browse</p>
-              <input type="file" id="invoice-file" name="invoice_file" />
-            </div>
-          </label>
+          <div id="invoice-upload-section">
+            <label>
+              <span id="invoice-label-text">Invoice PDF</span>
+              <div class="dropzone" id="invoice-dropzone" data-input-id="invoice-file">
+                <p class="dropzone-text">Drag and drop invoice here, or click to browse</p>
+                <input type="file" id="invoice-file" name="invoice_file" />
+              </div>
+            </label>
+          </div>
 
-          <label>
-            License Export CSVs (required for Adobe, Hexnode, and Generic; optional for Integricom Licensing; not used for Integricom Support Hours)
-            <div class="dropzone" id="csv-dropzone" data-input-id="csv-files">
-              <p class="dropzone-text">Drag and drop one or more CSV files here, or click to browse</p>
-              <input type="file" id="csv-files" name="csv_files" accept=".csv,text/csv" multiple />
-            </div>
-          </label>
+          <div id="csv-upload-section">
+            <label>
+              <span id="csv-label-text">License Export CSV</span>
+              <div class="dropzone" id="csv-dropzone" data-input-id="csv-files">
+                <p class="dropzone-text">Drag and drop one or more CSV files here, or click to browse</p>
+                <input type="file" id="csv-files" name="csv_files" accept=".csv,text/csv" multiple />
+              </div>
+            </label>
+          </div>
 
           <button type="submit" id="analyze-btn">Analyze and Build Breakdown</button>
         </form>
@@ -193,6 +197,6 @@
     </main>
 
     <script src="/static/theme.js?v=2026-02-13-1" defer></script>
-    <script src="/static/app.js?v=2026-04-01-8" defer></script>
+    <script src="/static/app.js?v=2026-04-28-1" defer></script>
   </body>
 </html>

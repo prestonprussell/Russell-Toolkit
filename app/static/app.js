@@ -3,6 +3,10 @@ const vendorTypeSelect = document.getElementById("vendor-type");
 const vendorTypeButtons = [...document.querySelectorAll(".vendor-type-btn")];
 const invoiceInput = document.getElementById("invoice-file");
 const csvInput = document.getElementById("csv-files");
+const invoiceUploadSection = document.getElementById("invoice-upload-section");
+const csvUploadSection = document.getElementById("csv-upload-section");
+const invoiceLabelText = document.getElementById("invoice-label-text");
+const csvLabelText = document.getElementById("csv-label-text");
 const invoiceDropzone = document.getElementById("invoice-dropzone");
 const csvDropzone = document.getElementById("csv-dropzone");
 const resultPanel = document.getElementById("result-panel");
@@ -30,6 +34,7 @@ const reconciliationList = document.getElementById("reconciliation-notes");
 const missingUsersResultsList = document.getElementById("missing-users-results");
 
 let latestCsvText = "";
+let latestInvoiceFilename = "";
 let currentUserRows = [];
 let currentUserVendor = "";
 let currentBranchAssignmentPrompts = [];
@@ -67,6 +72,37 @@ function refreshAnalyzeButtonLabel() {
   analyzeBtn.textContent = "Analyze and Build Breakdown";
 }
 
+const UPLOAD_CONFIGS = {
+  hexnode: {
+    invoice: "Invoice PDF",
+    csv: "Device Export CSV",
+  },
+  adobe: {
+    invoice: "Invoice PDF",
+    csv: "Adobe Users Export CSV (optional)",
+  },
+  integricom: {
+    invoice: "Invoice PDF",
+    csv: "Microsoft User Export CSV (optional)",
+  },
+  integricom_support: {
+    invoice: "Invoice PDF",
+    csv: null,
+  },
+  generic: {
+    invoice: null,
+    csv: "CSV File",
+  },
+};
+
+function updateUploadSections(vendor) {
+  const cfg = UPLOAD_CONFIGS[vendor] || { invoice: "Invoice", csv: "CSV File" };
+  invoiceUploadSection.hidden = !cfg.invoice;
+  csvUploadSection.hidden = !cfg.csv;
+  if (cfg.invoice) invoiceLabelText.textContent = cfg.invoice;
+  if (cfg.csv) csvLabelText.textContent = cfg.csv;
+}
+
 function setVendorType(nextVendor) {
   vendorTypeSelect.value = nextVendor;
   vendorTypeButtons.forEach((button) => {
@@ -79,6 +115,7 @@ function setVendorType(nextVendor) {
   currentUserVendor = "";
   currentBranchAssignmentPrompts = [];
   currentSupportRows = [];
+  updateUploadSections(nextVendor);
   refreshAnalyzeButtonLabel();
 }
 
@@ -284,6 +321,7 @@ function clearResults() {
   summaryCards.innerHTML = "";
   downloadBtn.hidden = true;
   latestCsvText = "";
+  latestInvoiceFilename = "";
   resultPanel.hidden = true;
   summarySection.hidden = true;
   usersSection.hidden = true;
@@ -598,7 +636,7 @@ form.addEventListener("submit", async (event) => {
   const invoiceFile = invoiceInput.files[0];
   const csvFiles = csvInput.files;
 
-  if (!csvFiles.length && !["integricom", "integricom_support"].includes(vendorType)) {
+  if (!csvFiles.length && !["adobe", "integricom", "integricom_support"].includes(vendorType)) {
     alert("Please add at least one CSV file.");
     return;
   }
@@ -670,6 +708,8 @@ form.addEventListener("submit", async (event) => {
 
     if (data.invoice) {
       addCard("Invoice Reference", data.invoice.filename);
+      const baseName = data.invoice.filename.replace(/\.[^.]+$/, "");
+      latestInvoiceFilename = `${baseName}_breakdown.csv`;
     }
 
     data.files.forEach((entry) => {
@@ -882,7 +922,7 @@ downloadBtn.addEventListener("click", () => {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = "breakdown.csv";
+  anchor.download = latestInvoiceFilename || "breakdown.csv";
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
