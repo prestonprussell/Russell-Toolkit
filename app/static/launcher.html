@@ -3,8 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CodexPlayground Apps</title>
+    <title>Codex Playground</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico?v=2026-02-13-1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
     <script>
       (() => {
         try {
@@ -19,60 +25,86 @@
         } catch (_error) {}
       })();
     </script>
-    <link rel="stylesheet" href="/static/styles.css?v=2026-02-13-5" />
+    <link rel="stylesheet" href="/static/styles.css?v=2026-04-28-2" />
   </head>
   <body>
-    <main class="container launcher-container">
-      <div class="site-toolbar">
-        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle light and dark mode">
-          Light Mode
-        </button>
-      </div>
-      <section class="launcher-brand">
-        <img
-          class="launcher-logo launcher-logo-dark"
-          src="/static/codexplayground-logo.png?v=2026-02-13-3"
-          alt="CodexPlayground"
-        />
-        <img
-          class="launcher-logo launcher-logo-light"
-          src="/static/codexplayground-logo-light.png?v=2026-02-13-1"
-          alt=""
-          aria-hidden="true"
-        />
-      </section>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="sidebar-brand" href="/">
+          <span class="sidebar-mark">CP</span>
+          <span>Codex Playground</span>
+        </a>
 
-      <section class="panel launcher-hero">
-        <h1>Internal App Launcher</h1>
-        <p>Select an app below. This launcher is designed to grow as new internal tools are added.</p>
-      </section>
-
-      <section class="panel">
-        <h2>Available Apps</h2>
-        <div class="app-grid">
-          <a class="app-card app-card-live" href="/apps/invoice-analyzer">
-            <span class="app-status">Live</span>
-            <h3>Invoice Analyzer</h3>
-            <p>Upload invoices + exports and generate AP branch breakdowns automatically.</p>
-            <span class="app-link">Open App</span>
+        <nav class="sidebar-nav" aria-label="Primary">
+          <span class="sidebar-section">Apps</span>
+          <a class="nav-link" href="/" aria-current="page">
+            <span class="nav-icon">·</span>
+            <span>Launcher</span>
           </a>
-
-          <a class="app-card app-card-live" href="/apps/admin">
-            <span class="app-status">Live</span>
-            <h3>Admin</h3>
-            <p>Manage Adobe and Integricom user mappings and branch assignments in one place.</p>
-            <span class="app-link">Open App</span>
+          <a class="nav-link" href="/apps/invoice-analyzer">
+            <span class="nav-icon">·</span>
+            <span>Invoice Analyzer</span>
           </a>
+          <a class="nav-link" href="/apps/admin">
+            <span class="nav-icon">·</span>
+            <span>Admin</span>
+          </a>
+        </nav>
 
-          <article class="app-card app-card-soon" aria-disabled="true">
-            <span class="app-status">Planned</span>
-            <h3>Coming Soon</h3>
-            <p>Reserve this slot for your next office tool.</p>
-            <span class="app-link">Not Yet Available</span>
-          </article>
+        <div class="sidebar-footer">
+          <span class="muted-line">Internal tools</span>
+          <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle light and dark mode">
+            Light Mode
+          </button>
         </div>
-      </section>
-    </main>
-    <script src="/static/theme.js?v=2026-02-13-1" defer></script>
+      </aside>
+
+      <main class="page">
+        <header class="launcher-greeting">
+          <h1>Welcome back.</h1>
+          <p>A small home for internal tools. Pick one to get started — more are on the way.</p>
+        </header>
+
+        <section>
+          <div class="section-head" style="margin-bottom: var(--space-4)">
+            <h2>Available apps</h2>
+            <p class="subhead">Tools currently live in the Codex Playground workspace.</p>
+          </div>
+
+          <div class="app-grid">
+            <a class="app-card app-card-live" href="/apps/invoice-analyzer">
+              <span class="app-card-icon" aria-hidden="true">⌘</span>
+              <h3>Invoice Analyzer</h3>
+              <p>Upload invoices and license exports to generate AP branch breakdowns automatically.</p>
+              <div class="app-card-meta">
+                <span class="app-status live">Live</span>
+                <span class="app-link">Open →</span>
+              </div>
+            </a>
+
+            <a class="app-card app-card-live" href="/apps/admin">
+              <span class="app-card-icon" aria-hidden="true">◇</span>
+              <h3>Directory Admin</h3>
+              <p>Manage Adobe and Integricom user mappings and branch assignments in one place.</p>
+              <div class="app-card-meta">
+                <span class="app-status live">Live</span>
+                <span class="app-link">Open →</span>
+              </div>
+            </a>
+
+            <article class="app-card app-card-soon" aria-disabled="true">
+              <span class="app-card-icon" aria-hidden="true">+</span>
+              <h3>Coming soon</h3>
+              <p>A reserved slot for the next internal tool. Have an idea? Let's talk.</p>
+              <div class="app-card-meta">
+                <span class="app-status">Planned</span>
+                <span class="app-link">Not yet available</span>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="/static/theme.js?v=2026-04-28-1" defer></script>
   </body>
 </html>

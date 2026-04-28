@@ -3,8 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Directory Admin</title>
+    <title>Directory Admin · Codex Playground</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico?v=2026-02-13-1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
     <script>
       (() => {
         try {
@@ -19,70 +25,105 @@
         } catch (_error) {}
       })();
     </script>
-    <link rel="stylesheet" href="/static/styles.css?v=2026-02-13-6" />
+    <link rel="stylesheet" href="/static/styles.css?v=2026-04-28-2" />
   </head>
   <body>
-    <main class="container">
-      <div class="site-toolbar">
-        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle light and dark mode">
-          Light Mode
-        </button>
-      </div>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="sidebar-brand" href="/">
+          <span class="sidebar-mark">CP</span>
+          <span>Codex Playground</span>
+        </a>
 
-      <section class="panel">
-        <div class="panel-nav">
-          <a class="home-link" href="/">All Apps</a>
-          <span class="chip">Admin</span>
+        <nav class="sidebar-nav" aria-label="Primary">
+          <span class="sidebar-section">Apps</span>
+          <a class="nav-link" href="/">
+            <span class="nav-icon">·</span>
+            <span>Launcher</span>
+          </a>
+          <a class="nav-link" href="/apps/invoice-analyzer">
+            <span class="nav-icon">·</span>
+            <span>Invoice Analyzer</span>
+          </a>
+          <a class="nav-link" href="/apps/admin" aria-current="page">
+            <span class="nav-icon">·</span>
+            <span>Admin</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <span class="muted-line">Internal tools</span>
+          <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle light and dark mode">
+            Light Mode
+          </button>
         </div>
-        <h1>Directory Admin</h1>
-        <p>Update user branch mappings for Adobe and Integricom, add new users, or deactivate old users.</p>
+      </aside>
 
-        <div class="admin-toolbar">
-          <label>
-            Directory
-            <select id="admin-vendor">
-              <option value="adobe">Adobe</option>
-              <option value="integricom">Integricom</option>
-            </select>
-          </label>
-
-          <label>
-            Search
-            <input id="admin-search" type="text" placeholder="Search name, email, branch" />
-          </label>
-
-          <button id="admin-reload-btn" type="button" class="btn-secondary">Reload</button>
-          <button id="admin-sync-entra-btn" type="button" class="btn-secondary">Sync from Entra</button>
-          <button id="admin-import-btn" type="button" class="btn-secondary">Import Starting List</button>
-          <input id="admin-import-file" type="file" accept=".xlsx,.xlsm,.csv" hidden />
-          <button id="admin-add-btn" type="button" class="btn-secondary">Add User</button>
-          <button id="admin-save-btn" type="button">Save Changes</button>
+      <main class="page">
+        <div class="page-eyebrow">
+          <a href="/">Codex Playground</a>
+          <span class="sep">/</span>
+          <span>Directory Admin</span>
         </div>
-      </section>
 
-      <section class="panel">
-        <h2>Active User Mappings</h2>
-        <p id="admin-status" class="admin-status">Loading users...</p>
-        <div class="table-wrap">
-          <table class="resizable-table">
-            <thead>
-              <tr>
-                <th>First</th>
-                <th>Last</th>
-                <th>Email</th>
-                <th>Branch</th>
-                <th>Last Seen</th>
-                <th>Updated</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="admin-users-body"></tbody>
-          </table>
-        </div>
-      </section>
-    </main>
+        <header class="page-title" style="margin-bottom: var(--space-7)">
+          <h1>Directory Admin</h1>
+          <p>Update branch mappings for Adobe and Integricom users, add new ones, or deactivate stale entries.</p>
+        </header>
 
-    <script src="/static/theme.js?v=2026-02-13-1" defer></script>
-    <script src="/static/admin.js?v=2026-03-02-1" defer></script>
+        <section class="surface">
+          <div class="admin-toolbar">
+            <label>
+              Directory
+              <select id="admin-vendor">
+                <option value="adobe">Adobe</option>
+                <option value="integricom">Integricom</option>
+              </select>
+            </label>
+
+            <label>
+              Search
+              <input id="admin-search" type="search" placeholder="Search name, email, branch" />
+            </label>
+
+            <div class="admin-toolbar-actions">
+              <button id="admin-reload-btn" type="button" class="btn-secondary">Reload</button>
+              <button id="admin-sync-adobe-btn" type="button" class="btn-secondary">Sync from Adobe</button>
+              <button id="admin-sync-entra-btn" type="button" class="btn-secondary">Sync from Entra</button>
+              <button id="admin-import-btn" type="button" class="btn-secondary">Import starting list</button>
+              <input id="admin-import-file" type="file" accept=".xlsx,.xlsm,.csv" hidden />
+              <button id="admin-add-btn" type="button" class="btn-secondary">Add user</button>
+              <button id="admin-save-btn" type="button">Save changes</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>Active user mappings</h2>
+            <p id="admin-status" class="admin-status">Loading users…</p>
+          </div>
+          <div class="table-wrap">
+            <table class="resizable-table">
+              <thead>
+                <tr>
+                  <th>First</th>
+                  <th>Last</th>
+                  <th>Email</th>
+                  <th>Branch</th>
+                  <th>Last Seen</th>
+                  <th>Updated</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/theme.js?v=2026-04-28-1" defer></script>
+    <script src="/static/admin.js?v=2026-04-02-1" defer></script>
   </body>
 </html>

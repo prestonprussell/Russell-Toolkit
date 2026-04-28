@@ -3,8 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AP License Allocation</title>
+    <title>Invoice Analyzer · Codex Playground</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico?v=2026-02-13-1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
     <script>
       (() => {
         try {
@@ -19,184 +25,226 @@
         } catch (_error) {}
       })();
     </script>
-    <link rel="stylesheet" href="/static/styles.css?v=2026-04-01-4" />
+    <link rel="stylesheet" href="/static/styles.css?v=2026-04-28-2" />
   </head>
   <body>
-    <main class="container">
-      <div class="site-toolbar">
-        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle light and dark mode">
-          Light Mode
-        </button>
-      </div>
-      <section class="panel">
-        <div class="panel-nav">
-          <a class="home-link" href="/">All Apps</a>
-          <span class="chip">Invoice Analyzer</span>
-        </div>
-        <h1>AP License Allocation</h1>
-        <p>Select an invoice type — the required uploads will appear below.</p>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="sidebar-brand" href="/">
+          <span class="sidebar-mark">CP</span>
+          <span>Codex Playground</span>
+        </a>
 
-        <form id="upload-form">
-          <div class="vendor-picker" role="group" aria-label="Invoice type">
-            <span class="vendor-picker-label">Invoice Type</span>
-            <div class="vendor-button-row">
-              <button type="button" class="vendor-type-btn" data-vendor="hexnode">Hexnode</button>
-              <button type="button" class="vendor-type-btn" data-vendor="adobe">Adobe</button>
-              <button type="button" class="vendor-type-btn is-active" data-vendor="integricom">Integricom Licensing</button>
-              <button type="button" class="vendor-type-btn" data-vendor="integricom_support">Integricom Support Hours</button>
-              <button type="button" class="vendor-type-btn" data-vendor="generic">Generic</button>
+        <nav class="sidebar-nav" aria-label="Primary">
+          <span class="sidebar-section">Apps</span>
+          <a class="nav-link" href="/">
+            <span class="nav-icon">·</span>
+            <span>Launcher</span>
+          </a>
+          <a class="nav-link" href="/apps/invoice-analyzer" aria-current="page">
+            <span class="nav-icon">·</span>
+            <span>Invoice Analyzer</span>
+          </a>
+          <a class="nav-link" href="/apps/admin">
+            <span class="nav-icon">·</span>
+            <span>Admin</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <span class="muted-line">Internal tools</span>
+          <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle light and dark mode">
+            Light Mode
+          </button>
+        </div>
+      </aside>
+
+      <main class="page">
+        <div class="page-eyebrow">
+          <a href="/">Codex Playground</a>
+          <span class="sep">/</span>
+          <span>Invoice Analyzer</span>
+        </div>
+
+        <header class="page-title" style="margin-bottom: var(--space-7)">
+          <h1>AP License Allocation</h1>
+          <p>Upload an invoice and the matching license export — the breakdown will appear below.</p>
+        </header>
+
+        <section class="surface">
+          <form id="upload-form">
+            <div class="vendor-picker" role="group" aria-label="Invoice type">
+              <span class="vendor-picker-label">Invoice type</span>
+              <div class="vendor-button-row">
+                <button type="button" class="vendor-type-btn" data-vendor="hexnode">Hexnode</button>
+                <button type="button" class="vendor-type-btn" data-vendor="adobe">Adobe</button>
+                <button type="button" class="vendor-type-btn is-active" data-vendor="integricom">Integricom Licensing</button>
+                <button type="button" class="vendor-type-btn" data-vendor="integricom_support">Integricom Support</button>
+                <button type="button" class="vendor-type-btn" data-vendor="generic">Generic</button>
+              </div>
+              <input type="hidden" id="vendor-type" name="vendor_type" value="integricom" />
             </div>
-            <input type="hidden" id="vendor-type" name="vendor_type" value="integricom" />
-          </div>
 
-          <div id="invoice-upload-section">
-            <label>
-              <span id="invoice-label-text">Invoice PDF</span>
-              <div class="dropzone" id="invoice-dropzone" data-input-id="invoice-file">
-                <p class="dropzone-text">Drag and drop invoice here, or click to browse</p>
-                <input type="file" id="invoice-file" name="invoice_file" />
+            <div class="upload-grid">
+              <div id="invoice-upload-section">
+                <label>
+                  <span id="invoice-label-text">Invoice PDF</span>
+                  <div class="dropzone" id="invoice-dropzone" data-input-id="invoice-file">
+                    <p class="dropzone-text">Drag &amp; drop the invoice here, or click to browse.</p>
+                    <input type="file" id="invoice-file" name="invoice_file" />
+                  </div>
+                </label>
               </div>
-            </label>
-          </div>
 
-          <div id="csv-upload-section">
-            <label>
-              <span id="csv-label-text">License Export CSV</span>
-              <div class="dropzone" id="csv-dropzone" data-input-id="csv-files">
-                <p class="dropzone-text">Drag and drop one or more CSV files here, or click to browse</p>
-                <input type="file" id="csv-files" name="csv_files" accept=".csv,text/csv" multiple />
+              <div id="csv-upload-section">
+                <label>
+                  <span id="csv-label-text">License Export CSV</span>
+                  <div class="dropzone" id="csv-dropzone" data-input-id="csv-files">
+                    <p class="dropzone-text">Drag &amp; drop one or more CSV files, or click to browse.</p>
+                    <input type="file" id="csv-files" name="csv_files" accept=".csv,text/csv" multiple />
+                  </div>
+                </label>
               </div>
-            </label>
+            </div>
+
+            <div class="action-bar">
+              <button type="submit" id="analyze-btn">Analyze and build breakdown</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="section" id="result-panel" hidden>
+          <div class="section-head">
+            <h2>Breakdown</h2>
+            <p class="subhead">Edit any branch assignment inline; download the CSV when you're done.</p>
           </div>
 
-          <button type="submit" id="analyze-btn">Analyze and Build Breakdown</button>
-        </form>
-      </section>
-
-      <section class="panel" id="result-panel" hidden>
-        <h2>Breakdown</h2>
-
-        <div id="branch-assignment-section" hidden>
-          <h3>Branch Assignment Needed</h3>
-          <p>
-            Extra branch-tethered quantities require assignment. Already-assigned branches are shown to help avoid
-            duplicates.
-          </p>
-          <div class="table-wrap">
-            <table class="resizable-table">
-              <thead>
-                <tr>
-                  <th>Charge</th>
-                  <th>Unit Price</th>
-                  <th>Extra Unit #</th>
-                  <th>Already Assigned Branches</th>
-                  <th>Assign Branch</th>
-                </tr>
-              </thead>
-              <tbody id="branch-assignment-body"></tbody>
-            </table>
+          <div id="branch-assignment-section" hidden>
+            <h3>Branch assignment needed</h3>
+            <p>
+              Extra branch-tethered quantities require assignment. Already-assigned branches are shown to help avoid
+              duplicates.
+            </p>
+            <div class="table-wrap">
+              <table class="resizable-table">
+                <thead>
+                  <tr>
+                    <th>Charge</th>
+                    <th>Unit Price</th>
+                    <th>Extra Unit #</th>
+                    <th>Already Assigned Branches</th>
+                    <th>Assign Branch</th>
+                  </tr>
+                </thead>
+                <tbody id="branch-assignment-body"></tbody>
+              </table>
+            </div>
+            <datalist id="integricom-branch-options"></datalist>
           </div>
-          <datalist id="integricom-branch-options"></datalist>
-        </div>
 
-        <div id="support-review-section" hidden>
-          <h3>Support Billable Blocks (Bill = Y)</h3>
-          <p>
-            Branches are auto-suggested from ticket text. Low-confidence rows default to Home Office and are highlighted
-            for review.
-          </p>
-          <div class="table-wrap">
-            <table class="resizable-table">
-              <thead>
-                <tr>
-                  <th>Charge Summary</th>
-                  <th>Billable Amount</th>
-                  <th>Hours</th>
-                  <th>Branch</th>
-                  <th>Confidence</th>
-                  <th>Reason</th>
-                </tr>
-              </thead>
-              <tbody id="support-review-body"></tbody>
-            </table>
+          <div id="support-review-section" hidden>
+            <h3>Support billable blocks (Bill = Y)</h3>
+            <p>
+              Branches are auto-suggested from ticket text. Low-confidence rows default to Home Office and are
+              highlighted for review.
+            </p>
+            <div class="table-wrap">
+              <table class="resizable-table">
+                <thead>
+                  <tr>
+                    <th>Charge Summary</th>
+                    <th>Billable Amount</th>
+                    <th>Hours</th>
+                    <th>Branch</th>
+                    <th>Confidence</th>
+                    <th>Reason</th>
+                  </tr>
+                </thead>
+                <tbody id="support-review-body"></tbody>
+              </table>
+            </div>
+            <datalist id="support-branch-options"></datalist>
           </div>
-          <datalist id="support-branch-options"></datalist>
-        </div>
 
-        <div id="summary-cards" class="cards"></div>
+          <div id="summary-cards" class="cards"></div>
 
-        <button id="download-btn" type="button" hidden>Download breakdown.csv</button>
-
-        <div id="adobe-users-section" hidden>
-          <h3 id="users-section-title">Users</h3>
-          <p id="users-section-help">Branch is editable. Save branch edits here, then Analyze to recalculate totals if needed.</p>
-          <button id="save-branches-btn" type="button">Save Branch Changes</button>
-          <div class="table-wrap">
-            <table class="resizable-table">
-              <thead>
-                <tr>
-                  <th>First</th>
-                  <th>Last</th>
-                  <th>Email</th>
-                  <th>Branch</th>
-                  <th>Licenses</th>
-                  <th>User Total</th>
-                </tr>
-              </thead>
-              <tbody id="adobe-users-body"></tbody>
-            </table>
+          <div class="action-bar">
+            <button id="download-btn" type="button" hidden>Download breakdown.csv</button>
           </div>
-        </div>
 
-        <div id="non-user-section" hidden>
-          <h3>Non-User Branch Charges</h3>
-          <p>Fixed branch-level allocations and invoice delta adjustments.</p>
-          <div class="table-wrap">
-            <table class="resizable-table">
-              <thead>
-                <tr>
-                  <th>Branch</th>
-                  <th>Charge</th>
-                  <th>Type</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody id="non-user-body"></tbody>
-            </table>
+          <div id="adobe-users-section" hidden>
+            <h3 id="users-section-title">Users</h3>
+            <p id="users-section-help">Branch is editable. Save branch edits here, then Analyze to recalculate totals if needed.</p>
+            <div class="action-bar" style="margin-top: 0">
+              <button id="save-branches-btn" type="button" class="btn-secondary">Save branch changes</button>
+            </div>
+            <div class="table-wrap">
+              <table class="resizable-table">
+                <thead>
+                  <tr>
+                    <th>First</th>
+                    <th>Last</th>
+                    <th>Email</th>
+                    <th>Branch</th>
+                    <th>Licenses</th>
+                    <th>User Total</th>
+                  </tr>
+                </thead>
+                <tbody id="adobe-users-body"></tbody>
+              </table>
+            </div>
           </div>
-        </div>
 
-        <div id="summary-section" hidden>
-          <h3>Totals By Branch and License</h3>
-          <div class="table-wrap">
-            <table class="resizable-table">
-              <thead>
-                <tr>
-                  <th>Branch</th>
-                  <th>License</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody id="summary-body"></tbody>
-            </table>
+          <div id="non-user-section" hidden>
+            <h3>Non-user branch charges</h3>
+            <p>Fixed branch-level allocations and invoice delta adjustments.</p>
+            <div class="table-wrap">
+              <table class="resizable-table">
+                <thead>
+                  <tr>
+                    <th>Branch</th>
+                    <th>Charge</th>
+                    <th>Type</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody id="non-user-body"></tbody>
+              </table>
+            </div>
           </div>
-        </div>
 
-        <h3>File Processing Notes</h3>
-        <ul id="file-notes"></ul>
+          <div id="summary-section" hidden>
+            <h3>Totals by branch and license</h3>
+            <div class="table-wrap">
+              <table class="resizable-table">
+                <thead>
+                  <tr>
+                    <th>Branch</th>
+                    <th>License</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody id="summary-body"></tbody>
+              </table>
+            </div>
+          </div>
 
-        <h3>Reconciliation</h3>
-        <ul id="reconciliation-notes"></ul>
+          <h3>File processing notes</h3>
+          <ul id="file-notes"></ul>
 
-        <h3>Users Missing From Current Export</h3>
-        <ul id="missing-users-results"></ul>
+          <h3>Reconciliation</h3>
+          <ul id="reconciliation-notes"></ul>
 
-        <h3>Warnings</h3>
-        <ul id="warnings"></ul>
-      </section>
-    </main>
+          <h3>Users missing from current export</h3>
+          <ul id="missing-users-results"></ul>
 
-    <script src="/static/theme.js?v=2026-02-13-1" defer></script>
+          <h3>Warnings</h3>
+          <ul id="warnings"></ul>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/theme.js?v=2026-04-28-1" defer></script>
     <script src="/static/app.js?v=2026-04-28-1" defer></script>
   </body>
 </html>
